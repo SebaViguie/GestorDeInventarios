@@ -29,7 +29,8 @@ namespace GestorDeInventarios
                 }
                 catch
                 {
-                    Console.WriteLine("Ingrese un número válido");
+                    Console.Clear();
+                    Console.WriteLine("Ingrese un número válido\n");
                 }
 
                 if (option != 0)
@@ -40,6 +41,7 @@ namespace GestorDeInventarios
                             break;
 
                         case 2:
+                            NuevoInventario();
                             break;
 
                         case 3:
@@ -47,13 +49,56 @@ namespace GestorDeInventarios
                             break;
 
                         default:
+                            Console.Clear();
                             Console.WriteLine("Opción inválida");
                             break;
                     }
                 }
             }
         }
+        private static void NuevoInventario()
+        {
+            Console.Clear();
+            Console.WriteLine("Nuevo Inventario\n");
+
+        }
     }
 
+    internal class Articulo
+    {
+        private int codigo { get; set; }
+        private string? nombre { get; set; }
+        private int stock { get; set; }
+        private decimal precio { get; set; }
+        private DateTime fechaDeIngreso { get; set; }
+        private DateTime fechaDeVencimiento { get; set; }
 
+    }
+
+    internal class Inventario
+    {
+        List<Articulo> listaDeArticulos = new List<Articulo>();
+        private string? nombre { get; set; }
+        private string? clave { get; set; }
+
+        public void Agregar()
+        {
+
+        }
+
+        public void Mostrar()
+        {
+
+        }
+
+        public void Eliminar()
+        {
+
+        }
+
+        public void VerSinStock()
+        {
+
+        }
+    }
 }
