@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,6 +62,20 @@ namespace GestorDeInventarios
             Console.Clear();
             Console.WriteLine("Nuevo Inventario\n");
 
+        }
+
+        private static void Registrar()
+        {
+            SqlConnection sesion = new SqlConnection();
+            sesion.ConnectionString = "Data Source = localhost; user = seba; password = ; initial catalog = POO";
+
+            SqlCommand cmd = new SqlCommand { Connection = sesion };
+
+            
+                cmd.CommandText = $"INSERT INTO Cobros VALUES ('C', 'asd')";
+                sesion.Open();
+                cmd.ExecuteNonQuery();
+                sesion.Close();
         }
     }
 
