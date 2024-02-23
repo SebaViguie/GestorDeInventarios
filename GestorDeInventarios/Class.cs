@@ -61,13 +61,20 @@ namespace GestorDeInventarios
             Console.Clear();
             Console.WriteLine("Nuevo Inventario\n");
 
+            Console.WriteLine("Ingrese nombre");
+            string nombreInventario = Console.ReadLine();
+
+            Console.WriteLine("\n Ingrese Clave");
+            string claveInventario = Console.ReadLine();
+
+            
         }
     }
 
     internal class Articulo
     {
-        private int codigo { get; set; }
-        private string? nombre { get; set; }
+        private int codigoArt { get; set; }
+        private string? nombreArt { get; set; }
         private int stock { get; set; }
         private decimal precio { get; set; }
         private DateTime fechaDeIngreso { get; set; }
@@ -78,8 +85,8 @@ namespace GestorDeInventarios
     internal class Inventario
     {
         List<Articulo> listaDeArticulos = new List<Articulo>();
-        private string? nombre { get; set; }
-        private string? clave { get; set; }
+        private string? nombreInv { get; set; }
+        private string? claveInv { get; set; }
 
         public void Agregar()
         {
