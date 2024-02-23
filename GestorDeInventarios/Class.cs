@@ -39,10 +39,11 @@ namespace GestorDeInventarios
                     switch (option)
                     {
                         case 1:
+                            EnterInventory();
                             break;
 
                         case 2:
-                            NuevoInventario();
+                            NewInventory();
                             break;
 
                         case 3:
@@ -57,32 +58,46 @@ namespace GestorDeInventarios
                 }
             }
         }
-        private static void NuevoInventario()
+        private static void NewInventory()
         {
             Console.Clear();
             Console.WriteLine("Nuevo Inventario\n");
 
             Console.WriteLine("Ingrese nombre");
-            string nombreInventario = Console.ReadLine();
+            string? nameInventory = Console.ReadLine();
 
             Console.WriteLine("\n Ingrese Clave");
-            string claveInventario = Console.ReadLine();
+            string? passInventory = Console.ReadLine();
 
-            
-        }
+            Connection.SaveInventory(nameInventory, passInventory);
 
-        private static void Registrar()
+            Console.WriteLine(String.Format($"\n Inventario {0} creado!", nameInventory));
+        }     
+
+        private static void EnterInventory()
         {
-            SqlConnection sesion = new SqlConnection();
-            sesion.ConnectionString = "Data Source = localhost; user = seba; password = ; initial catalog = POO";
 
-            SqlCommand cmd = new SqlCommand { Connection = sesion };
+        }
+    }
 
-            
-                cmd.CommandText = $"INSERT INTO Cobros VALUES ('C', 'asd')";
-                sesion.Open();
-                cmd.ExecuteNonQuery();
-                sesion.Close();
+    internal static class Connection
+    {
+        private static string ConnectionString = "Data Source = sql.bsite.net\\MSSQL2016; user = sebaviguie_inventarios; password = 081092** ; initial catalog = sebaviguie_inventarios";
+        
+        public static void SaveInventory(string name, string pass)
+        {
+            using (SqlConnection sesion = new SqlConnection(ConnectionString))
+            {
+                string sqlQuery = "INSERT INTO inventario (vcInvNom, vcInvCla) VALUES (@name, @pass)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@pass", pass);
+                    sesion.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
     }
 
