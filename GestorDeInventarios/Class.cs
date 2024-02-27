@@ -4,6 +4,8 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace GestorDeInventarios
 {
@@ -71,12 +73,25 @@ namespace GestorDeInventarios
 
             Connection.SaveInventory(nameInventory, passInventory);
 
-            Console.WriteLine(String.Format($"\n Inventario {0} creado!", nameInventory));
+            Console.WriteLine(String.Format("\n Inventario {0} creado!\n", nameInventory));
         }     
 
         private static void EnterInventory()
         {
+            Console.Clear();
+            Console.WriteLine("Lista de inventarios\n");
 
+            Connection.ShowInventory();
+
+            Console.WriteLine("\n Ingrese nombre de inventario");
+            string? nameInv = Console.ReadLine();
+
+            Console.WriteLine("\n Ingrese contraseña");
+            string? passInv = Console.ReadLine();
+
+            Inventory inventory = Connection.SearchInventory(nameInv, passInv);
+
+            Console.WriteLine(inventory.GetCode());
         }
     }
 
@@ -84,9 +99,24 @@ namespace GestorDeInventarios
     {
         private static string ConnectionString = "Data Source = sql.bsite.net\\MSSQL2016; user = sebaviguie_inventarios; password = 081092** ; initial catalog = sebaviguie_inventarios";
         
-        public static void SaveInventory(string name, string pass)
+        private static void DbBase(Action<SqlConnection> action)
         {
             using (SqlConnection sesion = new SqlConnection(ConnectionString))
+            {
+                try
+                {
+                    action(sesion);
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(string.Format("Error: {0}", ex.Message)); 
+                }
+            }
+        }
+
+        public static void SaveInventory(string name, string pass)
+        {
+            DbBase((sesion) =>
             {
                 string sqlQuery = "INSERT INTO inventario (vcInvNom, vcInvCla) VALUES (@name, @pass)";
 
@@ -97,7 +127,62 @@ namespace GestorDeInventarios
                     sesion.Open();
                     cmd.ExecuteNonQuery();
                 }
-            }
+            });
+        }
+
+        public static void ShowInventory()
+        {
+            DbBase((sesion) =>
+            {
+                string sqlQuery = "SELECT vcInvNom FROM inventario";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    sesion.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string name = reader.GetString(0);
+                            Console.WriteLine(name);
+                        }
+                    }
+                }
+            });
+        }
+
+        public static Inventory SearchInventory(string name, string pass)
+        {
+            Inventory inventory = null;
+
+            DbBase((sesion) =>
+            {
+
+                string sqlQuery = "SELECT * FROM inventario WHERE vcInvNom = @name AND vcInvCla = @pass";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@pass", pass);
+
+                    sesion.Open();
+                    try
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            reader.Read();
+                            inventory = new Inventory(reader.GetInt32(0), reader.GetString(1));
+                        }
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Inventario o contraseña incorrectos");
+                    }
+
+                }
+            });
+
+            return inventory;
         }
     }
 
@@ -112,12 +197,23 @@ namespace GestorDeInventarios
 
     }
 
-    internal class Inventario
+    internal class Inventory
     {
         List<Articulo> listaDeArticulos = new List<Articulo>();
-        private string? nombreInv { get; set; }
-        private string? claveInv { get; set; }
 
+        private int codInv { get; set; }
+        private string? nombreInv { get; set; }
+
+        public Inventory(int code, string name)
+        {
+            this.codInv = code;
+            this.nombreInv = name;
+        }
+
+        public int GetCode()
+        {
+            return this.codInv;
+        }
         public void Agregar()
         {
 
