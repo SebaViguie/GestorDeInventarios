@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.FileIO;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -41,7 +42,8 @@ namespace GestorDeInventarios
                     switch (option)
                     {
                         case 1:
-                            EnterInventory();
+                            Inventory inventory = EnterInventory();
+                            ManageInventory(inventory);
                             break;
 
                         case 2:
@@ -70,13 +72,13 @@ namespace GestorDeInventarios
 
             Console.WriteLine("\n Ingrese Clave");
             string? passInventory = Console.ReadLine();
-
+            //validar si ya existe con ese nombre
             Connection.SaveInventory(nameInventory, passInventory);
 
             Console.WriteLine(String.Format("\n Inventario {0} creado!\n", nameInventory));
         }     
 
-        private static void EnterInventory()
+        private static Inventory EnterInventory()
         {
             Console.Clear();
             Console.WriteLine("Lista de inventarios\n");
@@ -91,7 +93,64 @@ namespace GestorDeInventarios
 
             Inventory inventory = Connection.SearchInventory(nameInv, passInv);
 
-            Console.WriteLine(inventory.GetCode());
+            return inventory;
+        }
+
+        private static void ManageInventory(Inventory inventory)
+        {
+            byte option = 0;
+            bool next = true;
+
+            while(next)
+            {
+                Console.Clear();
+                Console.WriteLine($"{inventory.GetName()}");
+                Console.WriteLine("------------------------");
+                Console.WriteLine("Elija una opción\n");
+                Console.WriteLine("1 - Mostrar artículos");
+                Console.WriteLine("2 - Agregar artículo");
+                Console.WriteLine("3 - Eliminar artículo");
+                Console.WriteLine("4 - Eliminar inventario");
+                Console.WriteLine("5 - Salir\n");
+
+                try
+                {
+                    option = byte.Parse(Console.ReadLine());
+                }
+                catch
+                {
+                    Console.Clear();
+                    Console.WriteLine("Ingrese un número válido\n");
+                }
+
+                if (option != 0)
+                {
+                    switch (option)
+                    {
+                        case 1:
+                            break;
+
+                        case 2:
+                            inventory.Add();
+                            break;
+
+                        case 3:
+                            break;
+
+                        case 4:
+                            break;
+
+                        case 5:
+                            next = false;
+                            break;
+
+                        default:
+                            Console.Clear();
+                            Console.WriteLine("Opción inválida");
+                            break;
+                    }
+                }
+            }
         }
     }
 
@@ -157,7 +216,6 @@ namespace GestorDeInventarios
 
             DbBase((sesion) =>
             {
-
                 string sqlQuery = "SELECT * FROM inventario WHERE vcInvNom = @name AND vcInvCla = @pass";
 
                 using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
@@ -184,44 +242,124 @@ namespace GestorDeInventarios
 
             return inventory;
         }
+
+        public static List<Article> LoadArticles(int codInv)
+        {
+            List<Article> articles = new List<Article>();
+
+            DbBase((sesion) =>
+            {
+                string sqlQuery = "SELECT * FROM articulo WHERE iInvCod=@invCode";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue("@invCode", codInv);
+
+                    sesion.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            articles.Add(new Article(reader.GetString(2), reader.GetInt32(3), reader.GetDecimal(4), reader.GetDateTime(5), reader.GetDateTime(6)));
+                        }
+                    }
+
+                }
+            });
+
+            return articles;
+        }
+
+        public static void SaveArticle(int invCode, string name, int stock, decimal price, DateTime dateExp)
+        {
+            DbBase((sesion) =>
+            {
+                string sqlQuery = "INSERT INTO articulo (iInvCod, vcArtNom, iArtSto, deArtPre, daArtIng, daArtVen) VALUES (@invCode, @name, @stock, @price, @dateIn, @dateExp)";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue("@invCode", invCode);
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@stock", stock);
+                    cmd.Parameters.AddWithValue("@price", price);
+                    cmd.Parameters.AddWithValue("@dateIn", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@dateExp", dateExp);
+
+                    sesion.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            });
+        }
     }
 
-    internal class Articulo
+    internal class Article
     {
-        private int codigoArt { get; set; }
-        private string? nombreArt { get; set; }
+        private string? nameArt { get; set; }
         private int stock { get; set; }
-        private decimal precio { get; set; }
-        private DateTime fechaDeIngreso { get; set; }
-        private DateTime fechaDeVencimiento { get; set; }
+        private decimal price { get; set; }
+        private DateTime dateIn { get; set; }
+        private DateTime dateExp { get; set; }
+
+        public Article(string name, int stock, decimal price, DateTime dateIn, DateTime exp)
+        {
+            this.nameArt = name;
+            this.stock = stock;
+            this.price = price;
+            this.dateIn = dateIn;
+            this.dateExp = exp;
+        }
 
     }
 
     internal class Inventory
     {
-        List<Articulo> listaDeArticulos = new List<Articulo>();
+        List<Article> listOfArticles = new List<Article>();
 
         private int codInv { get; set; }
-        private string? nombreInv { get; set; }
+        private string? nameInv { get; set; }
 
         public Inventory(int code, string name)
         {
             this.codInv = code;
-            this.nombreInv = name;
+            this.nameInv = name;
+            this.listOfArticles = Connection.LoadArticles(this.codInv);
         }
 
         public int GetCode()
         {
             return this.codInv;
         }
-        public void Agregar()
-        {
 
+        public string GetName()
+        {
+            return this.nameInv;
+        }
+        public void Add()
+        {
+            //validaciones
+            Console.Clear();
+            Console.WriteLine("Producto nuevo\n");
+            Console.Write("Nombre: ");
+            string name = Console.ReadLine();
+            Console.Write("Stock: ");
+            int stock = int.Parse(Console.ReadLine());
+            Console.Write("Precio: ");
+            decimal price = decimal.Parse(Console.ReadLine());
+            Console.Write("Año de vencimiento: ");
+            int year = int.Parse(Console.ReadLine());
+            Console.Write("Mes de vencimiento: ");
+            int month = int.Parse(Console.ReadLine());
+            Console.Write("Día de vencimiento: ");
+            int day = int.Parse(Console.ReadLine());
+            DateTime exp = new DateTime(year, month, day);
+
+            Connection.SaveArticle(this.GetCode(), name, stock, price, exp);
+            this.listOfArticles.Add(new Article(name, stock, price, DateTime.Today, exp));
         }
 
-        public void Mostrar()
+        public void Show()
         {
-
+            
         }
 
         public void Eliminar()
