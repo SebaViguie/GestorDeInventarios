@@ -128,6 +128,7 @@ namespace GestorDeInventarios
                     switch (option)
                     {
                         case 1:
+                            inventory.Show();
                             break;
 
                         case 2:
@@ -135,9 +136,18 @@ namespace GestorDeInventarios
                             break;
 
                         case 3:
+                            inventory.RemoveArticle();
                             break;
 
                         case 4:
+                            Console.WriteLine("¿Seguro que desea eliminar este inventario? (s/n)");
+                            char confirm = char.Parse(Console.ReadLine());
+                            if(confirm == 's')
+                            {
+                                Connection.DeleteInventory(inventory.GetCode());
+                                next = false;
+                                Console.Clear();
+                            }
                             break;
 
                         case 5:
@@ -290,6 +300,41 @@ namespace GestorDeInventarios
                 }
             });
         }
+
+        public static int RemoveArticle(string name, int code)
+        {
+            int affected = 0;
+
+            Connection.DbBase((sesion) =>
+            {
+                string sqlQuery = $"DELETE FROM articulo WHERE vcArtNom = @name AND iInvCod = @code";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue($"@name", name);
+                    cmd.Parameters.AddWithValue($"@code", code);
+                    sesion.Open();
+                    affected = cmd.ExecuteNonQuery();
+                }
+            });
+
+            return affected;
+        }
+
+        public static void DeleteInventory(int code)
+        {
+            DbBase((sesion) =>
+            {
+                string sqlQuery = "DELETE FROM inventario WHERE iInvCod = @code";
+
+                using (SqlCommand cmd = new SqlCommand(sqlQuery, sesion))
+                {
+                    cmd.Parameters.AddWithValue("@code", code);
+                    sesion.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            });
+        }
     }
 
     internal class Article
@@ -309,6 +354,30 @@ namespace GestorDeInventarios
             this.dateExp = exp;
         }
 
+        public string GetName()
+        {
+            return this.nameArt;
+        }
+
+        public int GetStock()
+        {
+            return this.stock;
+        }
+
+        public decimal GetPrice()
+        {
+            return this.price;
+        }
+
+        public DateTime GetDateIn()
+        {
+            return this.dateIn;
+        }
+
+        public DateTime GetDateExp()
+        {
+            return this.dateExp;
+        }
     }
 
     internal class Inventory
@@ -322,7 +391,7 @@ namespace GestorDeInventarios
         {
             this.codInv = code;
             this.nameInv = name;
-            this.listOfArticles = Connection.LoadArticles(this.codInv);
+            this.listOfArticles = Connection.LoadArticles(this.GetCode());
         }
 
         public int GetCode()
@@ -354,22 +423,34 @@ namespace GestorDeInventarios
             DateTime exp = new DateTime(year, month, day);
 
             Connection.SaveArticle(this.GetCode(), name, stock, price, exp);
-            this.listOfArticles.Add(new Article(name, stock, price, DateTime.Today, exp));
+            this.listOfArticles = Connection.LoadArticles(this.GetCode());
         }
 
         public void Show()
         {
-            
+            Console.Clear();
+
+            foreach (Article item in this.listOfArticles)
+            {
+                Console.WriteLine($"{item.GetName()} - ${item.GetPrice()} - {item.GetStock()} unidades - Ingreso: {item.GetDateIn()} - Vencimiento: {item.GetDateExp()}");
+            }
+
+            Console.WriteLine("\nPresione enter para continuar");
+            Console.ReadLine();
         }
 
-        public void Eliminar()
+        public void RemoveArticle()
         {
+            Console.Clear();
+            Console.Write("Nombre de producto a eliminar: ");
+            string name = Console.ReadLine();
 
-        }
-
-        public void VerSinStock()
-        {
-
+            //validaciones
+            Console.Clear();
+            Console.WriteLine(string.Format("{0} artículos eliminados", Connection.RemoveArticle(name, this.GetCode())));
+            this.listOfArticles = Connection.LoadArticles(this.GetCode());
+            Console.Write("\nPresione enter para continuar");
+            Console.ReadLine();
         }
     }
 }
