@@ -62,13 +62,16 @@ namespace GestorDeInventarios
             Console.WriteLine("Ingrese nombre");
             string? nameInventory = Console.ReadLine();
 
-            Console.WriteLine("\n Ingrese Clave");
+            Console.WriteLine("\nIngrese Clave");
             string? passInventory = Console.ReadLine();
             //validar si ya existe con ese nombre
             Connection.SaveInventory(nameInventory, passInventory);
 
             Console.WriteLine(String.Format("\n Inventario {0} creado!\n", nameInventory));
-        }     
+            Console.WriteLine("Presione enter para continuar");
+            Console.ReadLine();
+            Console.Clear();
+        }
 
         private static Inventory EnterInventory()
         {
