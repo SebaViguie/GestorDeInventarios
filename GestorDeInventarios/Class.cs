@@ -1,12 +1,4 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using static System.Collections.Specialized.BitVector32;
+﻿using System.Data.SqlClient;
 
 namespace GestorDeInventarios
 {
